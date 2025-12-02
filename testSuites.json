@@ -1,0 +1,13 @@
+[
+  {
+    "id": "1",
+    "name": "Self-Service All tests",
+    "testCases": [
+      {
+        "id": "1",
+        "name": "test.js",
+        "description": "Testing the flow of assessments"
+      }
+    ]
+  }
+]

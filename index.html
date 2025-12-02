@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Suite Dashboard</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .suite { border: 1px solid #ccc; padding: 10px; margin: 10px 0; cursor: pointer; }
+        .suite:hover { background-color: #f0f0f0; }
+        .test-case { border: 1px solid #ddd; padding: 5px; margin: 5px 0; }
+        .play-btn { background-color: #4CAF50; color: white; border: none; padding: 5px 10px; cursor: pointer; }
+        .result { margin-left: 10px; font-weight: bold; }
+        .pass { color: green; }
+        .fail { color: red; }
+        .form { margin: 10px 0; }
+        input, button { margin: 5px; padding: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Test Suite Dashboard</h1>
+    <div class="form">
+        <input type="text" id="suiteName" placeholder="New Suite Name">
+        <button onclick="createSuite()">Create Suite</button>
+    </div>
+    <div id="suites"></div>
+
+    <div id="suiteView" style="display: none;">
+        <button onclick="backToSuites()">Back to Suites</button>
+        <h2 id="suiteTitle"></h2>
+        <div>
+            <label for="targetUrl">Target URL:</label>
+            <input type="text" id="targetUrl" value="https://www.controlcase.com">
+        </div>
+        <div class="form">
+            <input type="text" id="caseName" placeholder="Script Name (e.g., test.js)">
+            <input type="text" id="caseDesc" placeholder="Description">
+            <button onclick="addTestCase()">Add Test Case</button>
+        </div>
+        <div id="testCases"></div>
+    </div>
+
+    <script>
+        let currentSuiteId = null;
+
+        function loadSuites() {
+            $.get('/suites', function(data) {
+                $('#suites').empty();
+                data.forEach(suite => {
+                    $('#suites').append(`<div class="suite" onclick="viewSuite('${suite.id}', '${suite.name}')">${suite.name}</div>`);
+                });
+            });
+        }
+
+        function createSuite() {
+            const name = $('#suiteName').val();
+            if (!name) return;
+            $.post('/suites', JSON.stringify({name}), function() {
+                loadSuites();
+                $('#suiteName').val('');
+            });
+        }
+
+        function viewSuite(id, name) {
+            currentSuiteId = id;
+            $('#suiteTitle').text(name);
+            $('#suites').hide();
+            $('#suiteView').show();
+            $.get(`/suites/${id}`, function(suite) {
+                $('#testCases').empty();
+                suite.testCases.forEach(tc => {
+                    $('#testCases').append(`<div class="test-case">
+                        <strong>${tc.name}</strong> - ${tc.description}
+                        <button class="play-btn" onclick="runTest('${tc.id}', this)">▶ Run</button>
+                        <span class="result"></span>
+                        <div class="screenshots" style="margin-top: 10px;"></div>
+                    </div>`);
+                });
+            });
+        }
+
+        function backToSuites() {
+            $('#suiteView').hide();
+            $('#suites').show();
+        }
+
+        function addTestCase() {
+            const name = $('#caseName').val();
+            const desc = $('#caseDesc').val();
+            if (!name || !desc) return;
+            $.post(`/suites/${currentSuiteId}/cases`, JSON.stringify({name, description: desc}), function() {
+                viewSuite(currentSuiteId, $('#suiteTitle').text());
+                $('#caseName').val('');
+                $('#caseDesc').val('');
+            });
+        }
+
+        function runTest(caseId, btn) {
+            const url = $('#targetUrl').val().trim();
+            if (!url) {
+                alert('Target URL is a must to proceed.');
+                return;
+            }
+            $(btn).prop('disabled', true).text('Running...');
+            $.ajax({
+                method: 'POST',
+                url: `/suites/${currentSuiteId}/cases/${caseId}/run`,
+                contentType: 'application/json',
+                data: JSON.stringify({url}),
+                success: function(data) {
+                    const resultEl = $(btn).siblings('.result');
+                    resultEl.removeClass('pass fail');
+                    if (data.result === 'PASS') {
+                        resultEl.addClass('pass').text('PASS');
+                    } else if (data.result === 'FAIL') {
+                        resultEl.addClass('fail').text('FAIL');
+                    } else if (data.result === 'ERROR') {
+                        resultEl.addClass('fail').text(`ERROR: ${data.message || 'Unknown error'}`);
+                    } else if (data.result === 'TIMEOUT') {
+                        resultEl.addClass('fail').text(`TIMEOUT: ${data.message || 'Script timed out'}`);
+                    } else {
+                        resultEl.addClass('fail').text(`${data.result}: ${data.message || ''}`);
+                    }
+                    $(btn).prop('disabled', false).text('▶ Run');
+                    if (data.screenshots && data.screenshots.length) {
+                        const screenshotHtml = 'Screenshots: ' + data.screenshots.map(s => `<a href="${s}" target="_blank"><img src="${s}" alt="Step screenshot" width="100" height="60"></a>`).join(' ');
+                        $(btn).siblings('.screenshots').html(screenshotHtml);
+                    } else {
+                        $(btn).siblings('.screenshots').html('');
+                    }
+                    if (data.logs) {
+                        const logsLink = `<br><a href="${data.logs}" download target="_blank">Download Logs</a>`;
+                        $(btn).siblings('.screenshots').append(logsLink);
+                    }
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            loadSuites();
+        });
+    </script>
+</body>
