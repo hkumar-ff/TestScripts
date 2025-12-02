@@ -16,6 +16,15 @@
         .fail { color: red; }
         .form { margin: 10px 0; }
         input, button { margin: 5px; padding: 5px; }
+        .history-btn { background-color: #2196F3; color: white; border: none; padding: 5px 10px; cursor: pointer; margin-left: 5px; }
+        .modal { display: none; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgb(0,0,0); background-color: rgba(0,0,0,0.4); }
+        .modal-content { background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 800px; }
+        .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close:hover, .close:focus { color: black; text-decoration: none; }
+        .execution-item { border: 1px solid #ddd; padding: 10px; margin: 5px 0; cursor: pointer; }
+        .execution-item:hover { background-color: #f9f9f9; }
+        .execution-details { margin-top: 20px; padding: 10px; background-color: #f5f5f5; }
+        .screenshot-gallery img { margin: 5px; border: 1px solid #ccc; }
     </style>
 </head>
 <body>
@@ -39,6 +48,16 @@
             <button onclick="addTestCase()">Add Test Case</button>
         </div>
         <div id="testCases"></div>
+    </div>
+
+    <!-- History Modal -->
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeHistoryModal()">&times;</span>
+            <h2 id="historyTitle">Test Case History</h2>
+            <div id="executionList"></div>
+            <div id="executionDetails" style="display: none;"></div>
+        </div>
     </div>
 
     <script>
@@ -73,6 +92,7 @@
                     $('#testCases').append(`<div class="test-case">
                         <strong>${tc.name}</strong> - ${tc.description}
                         <button class="play-btn" onclick="runTest('${tc.id}', this)">▶ Run</button>
+                        <button class="history-btn" onclick="showHistory('${tc.id}', '${tc.name}')">📊 History</button>
                         <span class="result"></span>
                         <div class="screenshots" style="margin-top: 10px;"></div>
                     </div>`);
@@ -89,10 +109,20 @@
             const name = $('#caseName').val();
             const desc = $('#caseDesc').val();
             if (!name || !desc) return;
-            $.post(`/suites/${currentSuiteId}/cases`, JSON.stringify({name, description: desc}), function() {
-                viewSuite(currentSuiteId, $('#suiteTitle').text());
-                $('#caseName').val('');
-                $('#caseDesc').val('');
+            $.ajax({
+                method: 'POST',
+                url: `/suites/${currentSuiteId}/cases`,
+                contentType: 'application/json',
+                data: JSON.stringify({name, description: desc}),
+                success: function() {
+                    viewSuite(currentSuiteId, $('#suiteTitle').text());
+                    $('#caseName').val('');
+                    $('#caseDesc').val('');
+                },
+                error: function(xhr) {
+                    const response = xhr.responseJSON;
+                    alert(response.error || 'Failed to add test case');
+                }
             });
         }
 
@@ -136,6 +166,85 @@
                 }
             });
         }
+
+        function showHistory(caseId, caseName) {
+            $('#historyTitle').text(`History for ${caseName}`);
+            $('#executionList').html('<p>Loading...</p>');
+            $('#executionDetails').hide();
+
+            $.get(`/suites/${currentSuiteId}/cases/${caseId}/history`, function(data) {
+                if (data.length === 0) {
+                    $('#executionList').html('<p>No execution history found.</p>');
+                    return;
+                }
+
+                // Store execution data in element data for later use
+                $('#executionList').data('executions', data);
+
+                const listHtml = data.map(execution => {
+                    const resultClass = execution.result === 'PASS' ? 'pass' : execution.result === 'FAIL' ? 'fail' : 'fail';
+                    const timestamp = new Date(execution.timestamp).toLocaleString();
+                    return `<div class="execution-item" onclick="showExecutionDetails('${execution.id}')">
+                        <strong>${execution.result}</strong> - ${timestamp}
+                        <div>URL: ${execution.url}</div>
+                        ${execution.message ? `<div>Message: ${execution.message}</div>` : ''}
+                        <div>Screenshots: ${execution.screenshots.length}, Logs: Available</div>
+                    </div>`;
+                }).join('');
+
+                $('#executionList').html(listHtml);
+                $('#historyModal').show();
+            });
+        }
+
+        function showExecutionDetails(executionId) {
+            // Find the execution data in the list (we'll store it in the element data)
+            const executionData = $('#executionList').data('executions').find(e => e.id === executionId);
+
+            if (!executionData) {
+                $('#executionDetails').html('<h3>Execution Details</h3><p>Error: Execution data not found.</p>');
+                $('#executionDetails').show();
+                return;
+            }
+
+            const timestamp = new Date(executionData.timestamp).toLocaleString();
+            let detailsHtml = `
+                <h3>Execution Details</h3>
+                <p><strong>Result:</strong> <span class="${executionData.result === 'PASS' ? 'pass' : 'fail'}">${executionData.result}</span></p>
+                <p><strong>Timestamp:</strong> ${timestamp}</p>
+                <p><strong>Test URL:</strong> ${executionData.url}</p>
+                ${executionData.message ? `<p><strong>Message:</strong> ${executionData.message}</p>` : ''}
+                <h4>Screenshots (${executionData.screenshots.length})</h4>
+                <div class="screenshot-gallery">
+            `;
+
+            executionData.screenshots.forEach(screenshotUrl => {
+                detailsHtml += `<a href="${screenshotUrl}" target="_blank">
+                    <img src="${screenshotUrl}" alt="Screenshot" width="150" height="100">
+                </a>`;
+            });
+
+            detailsHtml += `
+                </div>
+                <h4>Logs</h4>
+                ${executionData.logsUrl ? `<p><a href="${executionData.logsUrl}" target="_blank">📄 Download Logs</a></p>` : '<p>No logs available</p>'}
+            `;
+
+            $('#executionDetails').html(detailsHtml);
+            $('#executionDetails').show();
+        }
+
+        function closeHistoryModal() {
+            $('#historyModal').hide();
+            $('#executionDetails').hide();
+        }
+
+        // Close modal when clicking outside
+        $(window).on('click', function(event) {
+            if (event.target == $('#historyModal')[0]) {
+                closeHistoryModal();
+            }
+        });
 
         $(document).ready(function() {
             loadSuites();
