@@ -1,7 +1,7 @@
 const puppeteer = require('puppeteer');
 const readline = require('readline');
 
-async function runTest() {
+async function runTest(complianceSubject, certificationType, proposalTitle, familiarity) {
   // Launch browser in non-headless mode to see the page
   const browser = await puppeteer.launch({
     headless: false,
@@ -11,7 +11,7 @@ async function runTest() {
   await page.setViewport(null);
 
   // Navigate to the website
-  await page.goto('https://www.controlcase.com');
+  await page.goto('https://selfservicedev.controlcase.com');
 
   console.log('Website www.controlcase.com opened in browser.');
   console.log('Clicking "Get Started" button...');
@@ -82,11 +82,11 @@ async function runTest() {
       console.log('Pass: Step 1 Industry');
     }
 
-    await page.evaluate(() => {
+    await page.evaluate((subject) => {
       const spans = Array.from(document.querySelectorAll('span'));
-      const span = spans.find(s => s.textContent.trim() === 'My customer needs to be compliant');
+      const span = spans.find(s => s.textContent.trim() === subject);
       if (span) span.click();
-    });
+    }, complianceSubject);
 
     console.log('Waiting for 10 seconds...');
     await new Promise(resolve => setTimeout(resolve, 10000));
@@ -110,11 +110,11 @@ async function runTest() {
       console.log('Pass: Step 2 Compliance Subject');
     }
 
-    await page.evaluate(() => {
+    await page.evaluate((certType) => {
       const spans = Array.from(document.querySelectorAll('span'));
-      const span = spans.find(s => s.textContent.trim() === 'CMMC');
+      const span = spans.find(s => s.textContent.trim() === certType);
       if (span) span.click();
-    });
+    }, certificationType);
 
     console.log('Waiting for 10 seconds...');
     await new Promise(resolve => setTimeout(resolve, 10000));
@@ -219,6 +219,11 @@ async function runTest() {
       const span = spans.find(s => s.textContent.trim() === 'My customer has been certified in past to an IT standard like SOC 2 or ISO 27001');
       if (span) span.click();
     });
+    await page.evaluate((fwc) => {
+      const spans = Array.from(document.querySelectorAll('span'));
+      const span = spans.find(s => s.textContent.trim() === fwc);
+      if (span) span.click();
+    }, familiarity);
 
     console.log('Waiting for 10 seconds...');
     await new Promise(resolve => setTimeout(resolve, 10000));
@@ -260,11 +265,11 @@ async function runTest() {
       console.log('Pass: Step 7 IT Controls');
     }
 
-    const isStep7bPresent = await page.evaluate(() => {
-      return Array.from(document.querySelectorAll('*')).some(el => el.textContent.includes('CMMC C3PAO Certification Proposal'));
-    });
+    const isStep7bPresent = await page.evaluate((title) => {
+      return Array.from(document.querySelectorAll('*')).some(el => el.textContent.includes(title));
+    }, proposalTitle);
     if (isStep7bPresent) {
-      console.log('Pass: The proposal is visible. Entire test is a PASS. Please close the script now');
+      console.log('Pass: '+proposalTitle+' is visible in the proposal screen. Entire test is a PASS. Please close the script now');
       await browser.close();
       return "PASS";
     } else {
@@ -280,4 +285,29 @@ async function runTest() {
   }
 }
 
-runTest();
+
+// const complianceSubject = 'My customer needs to be compliant';
+// const certificationType = 'CMMC';
+// const proposalTitle = 'CMMC C3PAO Certification Proposal';
+// const familiarity = "My customer has been certified in past to an IT standard like SOC 2 or ISO 27001";
+// Status: PASS
+
+// const complianceSubject = 'My company needs to be compliant';
+// const certificationType = 'CMMC';
+// const proposalTitle = 'CMMC C3PAO Certification Proposal';
+// const familiarity = "We have been certified in past to an IT standard like SOC 2 or ISO 27001";
+// Status: PASS
+
+// const complianceSubject = 'I need to evaluate my vendor for compliance';
+// const certificationType = 'CMMC';
+// const proposalTitle = 'CMMC C3PAO Certification Proposal';
+// const familiarity = "My vendor has been certified in past to an IT standard like SOC 2 or ISO 27001";
+// Status: PASS
+
+// const complianceSubject = 'I need to evaluate my vendor for compliance';
+// const certificationType = 'CMMC';
+// const proposalTitle = 'CMMC C3PAO Certification Proposal';
+// const familiarity = "My vendor has been certified in past to an IT standard like SOC 2 or ISO 27001";
+// Status: PASS
+
+runTest(complianceSubject, certificationType, proposalTitle, familiarity);
