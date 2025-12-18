@@ -11,8 +11,12 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}\\testing-engine\\test.js",
-            "args": ["https://www.controlcase.com"]
+            // "program": "${workspaceFolder}\\testing-engine\\case2.js",
+            // "program": "${workspaceFolder}\\testing-engine\\otherpop.js",
+            "program": "${workspaceFolder}\\testing-engine\\notsurepop.js",
+            // "program": "${workspaceFolder}\\testing-engine\\test-createaccount-form.js",
+            // "program": "${workspaceFolder}\\testing-engine\\test-ca-woa.js",
+            "args": ["https://dev.controlcase.com"]
         }
     ]
 }

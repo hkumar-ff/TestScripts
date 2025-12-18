@@ -53,7 +53,7 @@ async function runTest(test_url) {
 
   // Step 1: Industry
   await sleepFunc();
-  await chooseOptions(page, browser, "Which industry do you identify with the most?", "step 1 industry", ["Government / Defense"], sleepFunc, takeScreenshotFunc);
+  await chooseOptions(page, browser, "Which industry do you identify with the most?", "step 1 industry", ["Retails and Payment Providers"], sleepFunc, takeScreenshotFunc);
   await clickNext(page, browser, "step 1 industry", sleepFunc, takeScreenshotFunc);
 
   // Step 2: Compliance Subject
@@ -63,17 +63,17 @@ async function runTest(test_url) {
 
   // Step 3: Certification Type
   await sleepFunc();
-  await chooseOptions(page, browser, "Which security certification would you like to explore today?", "Step 3: Certification Type", ["CMMC"], sleepFunc, takeScreenshotFunc);
+  await chooseOptions(page, browser, "Which security certification would you like to explore today?", "Step 3: Certification Type", ["PCI DSS"], sleepFunc, takeScreenshotFunc);
   await clickNext(page, browser, "Step 3: Certification Type", sleepFunc, takeScreenshotFunc);
 
   // Step 4: Environment
   await sleepFunc();
-  await chooseOptions(page, browser, "Please select the environment that applies to your company", "Step 4: Environment", ["Azure Gov Cloud"], sleepFunc, takeScreenshotFunc);
+  await chooseOptions(page, browser, "Please select the environment that applies to your company", "Step 4: Environment", ["AWS"], sleepFunc, takeScreenshotFunc);
   await clickNext(page, browser, "Step 4: Environment", sleepFunc, takeScreenshotFunc);
 
   // Step 5: IT Footprint
   await sleepFunc();
-  await chooseOptions(page, browser, "Please select the closest that apply to your company", "Step 5: IT Footprint", ["Less than 50", "2 or less", "6 to 25"], sleepFunc, takeScreenshotFunc);
+  await chooseOptions(page, browser, "Please select the closest that apply to your company", "Step 5: IT Footprint", ["251 to 1000", "3 to 5", "26 to 100"], sleepFunc, takeScreenshotFunc);
   await clickNext(page, browser, "Step 5: IT Footprint", sleepFunc, takeScreenshotFunc);
 
   // Step 6: Familiarity With Compliance
@@ -86,41 +86,49 @@ async function runTest(test_url) {
   await takeScreenshotFunc();
   const isCheckTextPresentStep7 = await page.evaluate((text) => {
     return Array.from(document.querySelectorAll('*')).some(el => el.textContent.includes(text));
-  }, "because you selected that you have been formally audited in the past");
+  }, "because you selected that you have been formally audited in the past. Please edit the pre-filled questions as needed if not accurate.");
   if (!isCheckTextPresentStep7) {
-    console.log(`Fail: because you selected that you have been formally audited in the past not found on the page`);
+    console.log(`Fail: Step 7: IT Controls: because you selected that you have been formally audited in the past. Please edit the pre-filled questions as needed if not accurate. not found on the page`);
     await browser.close();
     process.exit(1);
   }
-  console.log(`Pass: Step 7: IT Controls: because you selected that you have been formally audited in the past found in the page`);
+  console.log(`Pass: Step 7: IT Controls: because you selected that you have been formally audited in the past. Please edit the pre-filled questions as needed if not accurate.`);
   await clickNext(page, browser, "Step 7: IT Controls", sleepFunc, takeScreenshotFunc);
-
-  // Check Step 7
-  await sleepFunc();
-  await takeScreenshotFunc();
-  const isStep7Present = await page.evaluate(() => {
-    return Array.from(document.querySelectorAll('*')).some(el => el.textContent.includes("Create account to download the entire proposal!"));
-  });
-  if (!isStep7Present) {
-    console.log('failed on Step 7 IT Controls');
-    await browser.close();
-    process.exit(1);
-  }
-  console.log('PASS: Step 7 IT Controls');
 
   // Final check
   await sleepFunc();
-  const isFinalPresent = await page.evaluate(() => {
-    return Array.from(document.querySelectorAll('*')).some(el => el.textContent.includes('CMMC C3PAO Certification Proposal')) &&
-           Array.from(document.querySelectorAll('*')).some(el => el.textContent.includes('For MSP'));
-  });
-  if (!isFinalPresent) {
-    console.log('failed on Step 7 IT Controls');
+  await sleepFunc();
+  const isProposalPresent = await page.evaluate((text) => {
+    return Array.from(document.querySelectorAll('*')).some(el => el.textContent.includes(text));
+  }, "PCI DSS 4.0 Certification Proposal");
+  if (!isProposalPresent) {
+    console.log('Fail: PCI DSS 4.0 Certification Proposal not found on the page');
     await browser.close();
     process.exit(1);
   }
-  console.log('PASS: The proposal is visible');
-  console.log('PASS: CMMC C3PAO Certification Proposal For MSP found. Entire test is a PASS. Please close the script now');
+  console.log('Pass: PCI DSS 4.0 Certification Proposal');
+
+  const isForRetailsPresent = await page.evaluate((text) => {
+    return Array.from(document.querySelectorAll('*')).some(el => el.textContent.includes(text));
+  }, "For Retails & Payment");
+  if (!isForRetailsPresent) {
+    console.log('Fail: For Retails & Payment not found on the page');
+    await browser.close();
+    process.exit(1);
+  }
+  console.log('Pass: For Retails & Payment');
+
+  const isCreateAccountPresent = await page.evaluate((text) => {
+    return Array.from(document.querySelectorAll('*')).some(el => el.textContent.includes(text));
+  }, "Create account to download the entire proposal!");
+  if (!isCreateAccountPresent) {
+    console.log('Fail: Create account to download the entire proposal! not found on the page');
+    await browser.close();
+    process.exit(1);
+  }
+  console.log('Pass: Create account to download the entire proposal!');
+
+  console.log('PASS: Entire test is a PASS. Please close the script now');
   console.log("PASS");
   await browser.close();
   process.exit(0);

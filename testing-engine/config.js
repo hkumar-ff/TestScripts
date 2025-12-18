@@ -1,5 +1,5 @@
-const startPage = "https://www.controlcase.com";
-const sleepTime = 3;
+const startPage = "https://dev.controlcase.com";
+const sleepTime = 10;
 
 module.exports = {
   startPage,

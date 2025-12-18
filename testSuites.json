@@ -12,6 +12,31 @@
                 "id": "2",
                 "name": "case2.js",
                 "description": "CMMC - Myself"
+            },
+            {
+                "id": "3",
+                "name": "cmmc-vendor.js",
+                "description": "CMMC Vendor Scan"
+            },
+            {
+                "id": "4",
+                "name": "pcidss-vendor.js",
+                "description": "PCI DSS - Vendor"
+            },
+            {
+                "id": "5",
+                "name": "pcidss-self.js",
+                "description": "PCI DSS - MySelf"
+            },
+            {
+                "id": "6",
+                "name": "test-createaccount-form.js",
+                "description": "Create Account Form Validation"
+            },
+            {
+                "id": "7",
+                "name": "otherpop.js",
+                "description": "Other Pop-up contact us form"
             }
         ]
     }
