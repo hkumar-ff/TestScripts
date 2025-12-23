@@ -116,7 +116,7 @@ def run_test(suite_id, case_id):
 
         env = os.environ.copy()
         env['SCREENSHOT_DIR'] = screenshot_dir
-        result = subprocess.run(['node', script_path, test_url, input_json], capture_output=True, text=True, timeout=300, env=env)
+        result = subprocess.run(['node', script_path, test_url, input_json], capture_output=True, text=True, timeout=600, env=env)
 
         # Determine result status
         if result.returncode == 0:
@@ -185,7 +185,7 @@ def run_test(suite_id, case_id):
         }
         executions_data["executions"].append(execution_record)
         save_executions(executions_data)
-        return jsonify({'result': 'TIMEOUT', 'message': 'Script timed out after 300 seconds', 'screenshots': screenshots, 'logs': logs_url})
+        return jsonify({'result': 'TIMEOUT', 'message': 'Script timed out after 600 seconds', 'screenshots': screenshots, 'logs': logs_url})
     except Exception as e:
         # Save error execution record
         executions_data = load_executions()
