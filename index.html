@@ -24,7 +24,15 @@
         .execution-item { border: 1px solid #ddd; padding: 10px; margin: 5px 0; cursor: pointer; }
         .execution-item:hover { background-color: #f9f9f9; }
         .execution-details { margin-top: 20px; padding: 10px; background-color: #f5f5f5; }
-        .screenshot-gallery img { margin: 5px; border: 1px solid #ccc; }
+        .screenshot-gallery img { margin: 5px; border: 1px solid #ccc; cursor: pointer; }
+        .viewer-modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); }
+        .viewer-content { position: relative; width: 50vw; height: calc(50vw * 9 / 16); margin: auto; top: 50%; transform: translateY(-50%); background-color: #000; border-radius: 8px; overflow: hidden; }
+        .viewer-image { width: 100%; height: 100%; object-fit: contain; display: block; }
+        .viewer-nav { position: absolute; top: 50%; transform: translateY(-50%); background-color: rgba(255,255,255,0.3); color: white; border: none; font-size: 24px; padding: 10px; cursor: pointer; user-select: none; }
+        .viewer-prev { left: 10px; }
+        .viewer-next { right: 10px; }
+        .viewer-close { position: absolute; top: 10px; right: 10px; background-color: rgba(255,255,255,0.3); color: white; border: none; font-size: 20px; padding: 5px 10px; cursor: pointer; }
+        .viewer-counter { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); color: white; background-color: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 4px; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -60,6 +68,17 @@
         </div>
     </div>
 
+    <!-- Screenshot Viewer Modal -->
+    <div id="screenshotViewerModal" class="viewer-modal">
+        <div class="viewer-content">
+            <button class="viewer-close" onclick="closeScreenshotViewer()">&times;</button>
+            <button class="viewer-nav viewer-prev" onclick="navigateScreenshot(-1)">&#10094;</button>
+            <button class="viewer-nav viewer-next" onclick="navigateScreenshot(1)">&#10095;</button>
+            <img id="viewerImage" class="viewer-image" src="" alt="Screenshot">
+            <div id="viewerCounter" class="viewer-counter"></div>
+        </div>
+    </div>
+
     <script>
         let currentSuiteId = null;
 
@@ -89,11 +108,22 @@
             $.get(`/suites/${id}`, function(suite) {
                 $('#testCases').empty();
                 suite.testCases.forEach(tc => {
-                    $('#testCases').append(`<div class="test-case">
+                const inputDataJson = JSON.stringify(tc.inputData || {}, null, 2);
+                $('#testCases').append(`<div class="test-case">
                         <strong>${tc.name}</strong> - ${tc.description}
                         <button class="play-btn" onclick="runTest('${tc.id}', this)">▶ Run</button>
                         <button class="history-btn" onclick="showHistory('${tc.id}', '${tc.name}')">📊 History</button>
                         <span class="result"></span>
+                        <div class="input-section" style="margin-top: 10px;">
+                            <button onclick="toggleInputSection(this)" style="background: #f0f0f0; border: 1px solid #ccc; padding: 2px 5px; cursor: pointer;">📝 Input Data</button>
+                            <div class="input-data" style="display: none; margin-top: 5px;">
+                                <textarea id="input-${tc.id}" placeholder='Enter JSON input data (e.g., {"username": "test", "password": "pass123"})' rows="4" cols="60" style="font-family: monospace;">${inputDataJson}</textarea>
+                                <div style="margin-top: 5px;">
+                                    <button onclick="validateJson('${tc.id}')" style="background: #2196F3; color: white; border: none; padding: 3px 8px; cursor: pointer;">Validate JSON</button>
+                                    <span id="json-status-${tc.id}" style="margin-left: 10px;"></span>
+                                </div>
+                            </div>
+                        </div>
                         <div class="screenshots" style="margin-top: 10px;"></div>
                     </div>`);
                 });
@@ -132,12 +162,25 @@
                 alert('Target URL is a must to proceed.');
                 return;
             }
+
+            // Get JSON input data
+            const inputTextarea = $(`#input-${caseId}`);
+            let inputData = {};
+            if (inputTextarea.length && inputTextarea.val().trim()) {
+                try {
+                    inputData = JSON.parse(inputTextarea.val().trim());
+                } catch (e) {
+                    alert('Invalid JSON in input data: ' + e.message);
+                    return;
+                }
+            }
+
             $(btn).prop('disabled', true).text('Running...');
             $.ajax({
                 method: 'POST',
                 url: `/suites/${currentSuiteId}/cases/${caseId}/run`,
                 contentType: 'application/json',
-                data: JSON.stringify({url}),
+                data: JSON.stringify({url, inputData}),
                 success: function(data) {
                     const resultEl = $(btn).siblings('.result');
                     resultEl.removeClass('pass fail');
@@ -218,10 +261,8 @@
                 <div class="screenshot-gallery">
             `;
 
-            executionData.screenshots.forEach(screenshotUrl => {
-                detailsHtml += `<a href="${screenshotUrl}" target="_blank">
-                    <img src="${screenshotUrl}" alt="Screenshot" width="150" height="100">
-                </a>`;
+            executionData.screenshots.forEach((screenshotUrl, i) => {
+                detailsHtml += `<img src="${screenshotUrl}" alt="Screenshot" width="150" height="100" onclick="openScreenshotViewer('${executionId}', ${i})">`;
             });
 
             detailsHtml += `
@@ -234,15 +275,96 @@
             $('#executionDetails').show();
         }
 
+        function toggleInputSection(btn) {
+            const inputData = $(btn).siblings('.input-data');
+            inputData.toggle();
+        }
+
+        function validateJson(caseId) {
+            const textarea = $(`#input-${caseId}`);
+            const statusEl = $(`#json-status-${caseId}`);
+            try {
+                const jsonText = textarea.val().trim();
+                if (!jsonText) {
+                    statusEl.css('color', 'orange').text('Empty input - will use default {}');
+                    return;
+                }
+                JSON.parse(jsonText);
+                statusEl.css('color', 'green').text('✓ Valid JSON');
+            } catch (e) {
+                statusEl.css('color', 'red').text('✗ Invalid JSON: ' + e.message);
+            }
+        }
+
         function closeHistoryModal() {
             $('#historyModal').hide();
             $('#executionDetails').hide();
         }
 
+        // Screenshot Viewer variables
+        let currentScreenshots = [];
+        let currentScreenshotIndex = 0;
+
+        function openScreenshotViewer(executionId, initialIndex) {
+            // Fetch execution data to get screenshots
+            $.get(`/executions/${executionId}`, function(execution) {
+                if (execution.screenshots && execution.screenshots.length > 0) {
+                    currentScreenshots = execution.screenshots;
+                    currentScreenshotIndex = initialIndex;
+                    updateViewerImage();
+                    $('#screenshotViewerModal').show();
+                }
+            });
+        }
+
+        function updateViewerImage() {
+            if (currentScreenshots.length > 0) {
+                $('#viewerImage').attr('src', currentScreenshots[currentScreenshotIndex]);
+                $('#viewerCounter').text(`${currentScreenshotIndex + 1} / ${currentScreenshots.length}`);
+            }
+        }
+
+        function navigateScreenshot(direction) {
+            if (currentScreenshots.length === 0) return;
+            currentScreenshotIndex += direction;
+            if (currentScreenshotIndex < 0) {
+                currentScreenshotIndex = currentScreenshots.length - 1;
+            } else if (currentScreenshotIndex >= currentScreenshots.length) {
+                currentScreenshotIndex = 0;
+            }
+            updateViewerImage();
+        }
+
+        function closeScreenshotViewer() {
+            $('#screenshotViewerModal').hide();
+            currentScreenshots = [];
+            currentScreenshotIndex = 0;
+        }
+
+        // Keyboard navigation for viewer
+        $(document).on('keydown', function(event) {
+            if ($('#screenshotViewerModal').is(':visible')) {
+                switch(event.key) {
+                    case 'ArrowLeft':
+                        navigateScreenshot(-1);
+                        break;
+                    case 'ArrowRight':
+                        navigateScreenshot(1);
+                        break;
+                    case 'Escape':
+                        closeScreenshotViewer();
+                        break;
+                }
+            }
+        });
+
         // Close modal when clicking outside
         $(window).on('click', function(event) {
             if (event.target == $('#historyModal')[0]) {
                 closeHistoryModal();
+            }
+            if (event.target == $('#screenshotViewerModal')[0]) {
+                closeScreenshotViewer();
             }
         });
 

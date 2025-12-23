@@ -31,6 +31,7 @@ async function runTest(test_url, input_data = {}) {
   // Check for saved session
   const sessionCookiesPath = './createaccount-session.json';
   let sessionRestored = false;
+  let skipToForm = false;
 
   if (fs.existsSync(sessionCookiesPath)) {
     try {
@@ -42,24 +43,15 @@ async function runTest(test_url, input_data = {}) {
       await page.goto(test_url);
       await sleepFunc();
 
-      // Check if we're already at the proposal page (meaning session is valid)
-      const isProposalPresent = await page.evaluate((text) => {
+      // Check if we're already at the create account form (past CAPTCHA)
+      const isCreateAccountPresent = await page.evaluate((text) => {
         return Array.from(document.querySelectorAll('*')).some(el => el.textContent.includes(text));
-      }, "Create account to download the entire proposal!");
+      }, "Create Account");
 
-      if (isProposalPresent) {
-        console.log('Successfully restored session - skipping to Download Now step');
+      if (isCreateAccountPresent) {
+        console.log('Successfully restored session past CAPTCHA - skipping to form filling');
         sessionRestored = true;
-
-        // Jump directly to Download Now button
-        await sleepFunc();
-        await takeScreenshotFunc();
-        await page.evaluate(() => {
-          const buttons = Array.from(document.querySelectorAll('button'));
-          const button = buttons.find(b => b.textContent.trim() === 'Download Now');
-          if (button) button.click();
-        });
-        await sleepFunc();
+        skipToForm = true;
       } else {
         console.log('Saved session expired - proceeding with fresh start');
       }
@@ -181,42 +173,60 @@ async function runTest(test_url, input_data = {}) {
     console.log('Pass: Create account to download the entire proposal!');
   }
 
-  // Skip to Download Now step if session was restored
-  if (sessionRestored) {
-    console.log('Session restored - jumping directly to Download Now step');
-  }
+  if (!skipToForm) {
+    // Skip to Download Now step if session was restored
+    if (sessionRestored) {
+      console.log('Session restored - jumping directly to Download Now step');
+    }
 
-  // Click Download Now
-  await sleepFunc();
-  await takeScreenshotFunc();
-  await page.evaluate(() => {
-    const buttons = Array.from(document.querySelectorAll('button'));
-    const button = buttons.find(b => b.textContent.trim() === 'Download Now');
-    if (button) button.click();
-  });
-  await sleepFunc();
-
-  // Check for CAPTCHA after Download Now click
-  const isCaptchaPresent = await page.evaluate((text) => {
-    return Array.from(document.querySelectorAll('*')).some(el => el.textContent.includes(text));
-  }, "Let's confirm you are human");
-
-  if (isCaptchaPresent) {
-    console.log('CAPTCHA detected: "Let\'s confirm it is really you"');
-    console.log('Please complete the CAPTCHA manually.');
-    console.log('Script will wait until CAPTCHA is resolved and you reach the intended webpage...');
-
-    // Wait for CAPTCHA to be completed and page to change
-    await page.waitForFunction(() => {
-      const captchaText = Array.from(document.querySelectorAll('*')).some(el =>
-        el.textContent.includes("Let's confirm you are human")
-      );
-      return !captchaText; // Return true when CAPTCHA text is gone
-    }, { timeout: 300000 }); // 5 minute timeout
-
-    console.log('CAPTCHA completed, continuing...');
+    // Click Download Now
     await sleepFunc();
     await takeScreenshotFunc();
+    await page.evaluate(() => {
+      const buttons = Array.from(document.querySelectorAll('button'));
+      const button = buttons.find(b => b.textContent.trim() === 'Download Now');
+      if (button) button.click();
+    });
+    await sleepFunc();
+
+    // Check for CAPTCHA after Download Now click
+    const isCaptchaPresent = await page.evaluate((text) => {
+      return Array.from(document.querySelectorAll('*')).some(el => el.textContent.includes(text));
+    }, "Let's confirm you are human");
+
+    if (isCaptchaPresent) {
+      console.log('CAPTCHA detected: "Let\'s confirm you are human"');
+      console.log('Please complete the CAPTCHA manually.');
+      console.log('Script will wait until CAPTCHA is resolved and you reach the intended webpage...');
+
+      // Wait for CAPTCHA to be completed and page to change
+      await page.waitForFunction(() => {
+        const captchaText = Array.from(document.querySelectorAll('*')).some(el =>
+          el.textContent.includes("Let's confirm you are human")
+        );
+        return !captchaText; // Return true when CAPTCHA text is gone
+      }, { timeout: 300000 }); // 5 minute timeout
+
+      console.log('CAPTCHA completed, continuing...');
+      await sleepFunc();
+      await takeScreenshotFunc();
+
+      // Save session cookies for future runs (skip CAPTCHA)
+      try {
+        const cookies = await page.cookies();
+        const sessionData = {
+          cookies: cookies,
+          timestamp: new Date().toISOString(),
+          url: test_url
+        };
+        fs.writeFileSync(sessionCookiesPath, JSON.stringify(sessionData, null, 2));
+        console.log('Saved create account session for future use');
+      } catch (error) {
+        console.log('Error saving session:', error.message);
+      }
+    }
+  } else {
+    console.log('Session restored past CAPTCHA - jumping directly to form filling');
   }
 
   // Check Create Account
@@ -231,18 +241,31 @@ async function runTest(test_url, input_data = {}) {
   }
   console.log('Pass: Create Account');
 
-  // Fill form with public email
+  // Fill form with input data (business email from cedr)
   await sleepFunc();
-  await page.type('input[id="_r_1_"]', `alpha${datetime}@gmail.com`);
+  await page.type('input[id="_r_1_"]', input_data.email);
+  await takeScreenshotFunc();
+  await sleepFunc();
+
   // Clear phone input first, then type
-  await page.evaluate(() => {
-    const phoneInput = document.querySelector('input[placeholder="Enter phone number"]');
-    if (phoneInput) phoneInput.value = '';
-  });
-  await page.type('input[placeholder="Enter phone number"]', '+918527489490');
-  await page.type('input[id="_r_2_"]', 'Scripted Testing Donot Call');
-  await page.type('input[id="_r_3_"]', 'Testing Co. Do not call');
-  await page.type('input[id="_r_4_"]', 'Alpha6&h!@#$%^&*');
+  await page.focus('input[placeholder="Enter phone number"]');
+  await page.keyboard.down('Control');
+  await page.keyboard.press('a');
+  await page.keyboard.up('Control');
+  await page.keyboard.press('Delete');
+  await page.type('input[placeholder="Enter phone number"]', input_data.phone);
+  await takeScreenshotFunc();
+  await sleepFunc();
+
+  await page.type('input[id="_r_2_"]', input_data.name);
+  await takeScreenshotFunc();
+  await sleepFunc();
+
+  await page.type('input[id="_r_3_"]', input_data.organization);
+  await takeScreenshotFunc();
+  await sleepFunc();
+
+  await page.type('input[id="_r_4_"]', input_data.password);
   await takeScreenshotFunc();
   await sleepFunc();
 
@@ -254,115 +277,80 @@ async function runTest(test_url, input_data = {}) {
     if (button) button.click();
   });
   await sleepFunc();
+  await takeScreenshotFunc();
 
-  // Check public email validation
-  const isPublicEmailErrorPresent = await page.evaluate((text) => {
+  // Check for business email error
+  const isBusinessEmailError = await page.evaluate((text) => {
     return Array.from(document.querySelectorAll('*')).some(el => el.textContent.includes(text));
   }, "Enter a valid business email address (e.g., user@company.com).");
-  if (!isPublicEmailErrorPresent) {
-    console.log('Fail: Enter a valid business email address (e.g., user@company.com). not found on the page');
+  if (isBusinessEmailError) {
+    console.log('Fail: Business email validation error found - test failed');
     await browser.close();
     process.exit(1);
   }
-  console.log('Pass: Public email validated. Enter a valid business email address (e.g., user@company.com).');
 
-  // Clear email
-  await sleepFunc();
-  await page.evaluate(() => {
-    const emailInput = document.querySelector('input[id="_r_1_"]');
-    if (emailInput) emailInput.value = '';
-  });
-  await takeScreenshotFunc();
-  await sleepFunc();
-
-  // Check empty email validation
-  const isEmptyEmailErrorPresent = await page.evaluate((text) => {
-    return Array.from(document.querySelectorAll('*')).some(el => el.textContent.includes(text));
-  }, "Enter a valid business email address (e.g., user@company.com).");
-  if (!isEmptyEmailErrorPresent) {
-    console.log('Fail: Please enter a valid email address. not found on the page');
-    await browser.close();
-    process.exit(1);
-  }
-  console.log('Pass: Empty email validated. Please enter a valid email address.');
-
-  // Fill valid email and details
-  await sleepFunc();
-  await page.type('input[id="_r_1_"]', 'hkumar@farmfetch.com');
-  await page.evaluate(() => {
-    const phoneInput = document.querySelector('input[placeholder="Enter phone number"]');
-    if (phoneInput) phoneInput.value = '+918527489490';
-    const nameInput = document.querySelector('input[id="_r_2_"]');
-    if (nameInput) nameInput.value = 'Scripted Testing Donot Call';
-    const orgInput = document.querySelector('input[id="_r_3_"]');
-    if (orgInput) orgInput.value = 'Testing Co. Do not call';
-    const passInput = document.querySelector('input[id="_r_4_"]');
-    if (passInput) passInput.value = 'Alpha';
-  });
-  await takeScreenshotFunc();
-  await sleepFunc();
-
-  // Check submit disabled
-  const isSubmitDisabled = await page.evaluate(() => {
-    const button = Array.from(document.querySelectorAll('button')).find(b => b.textContent.trim() === 'Submit');
-    return button && button.disabled;
-  });
-  if (!isSubmitDisabled) {
-    console.log('Fail: Password validation working. Submit button should be disabled');
-    await browser.close();
-    process.exit(1);
-  }
-  console.log('Pass: Password validation working.');
-
-  // Fill valid password
-  await sleepFunc();
-  await page.evaluate(() => {
-    const passInput = document.querySelector('input[id="_r_4_"]');
-    if (passInput) passInput.value = 'Alpha6&h!@#$%^&*';
-  });
-  await takeScreenshotFunc();
-  await sleepFunc();
-
-  // Click Submit
-  await takeScreenshotFunc();
-  await page.evaluate(() => {
-    const buttons = Array.from(document.querySelectorAll('button'));
-    const button = buttons.find(b => b.textContent.trim() === 'Submit');
-    if (button) button.click();
-  });
-  await sleepFunc();
-
-  // Check existing account
-  const isAccountExistsPresent = await page.evaluate((text) => {
+  // Check for Account already exists
+  const isAccountExists = await page.evaluate((text) => {
     return Array.from(document.querySelectorAll('*')).some(el => el.textContent.includes(text));
   }, "Account already exists");
-  if (!isAccountExistsPresent) {
-    console.log('Fail: Account already exists not found on the page');
+  if (isAccountExists) {
+    console.log('Fail: Account already exists message found');
     await browser.close();
     process.exit(1);
   }
-  console.log('Pass: Existing account validated. Account already exists message found.');
 
-  // Save session cookies for future runs (skip questionnaire steps)
-  if (!sessionRestored) {
-    try {
-      const cookies = await page.cookies();
-      const sessionData = {
-        cookies: cookies,
-        timestamp: new Date().toISOString(),
-        url: test_url
-      };
-      fs.writeFileSync(sessionCookiesPath, JSON.stringify(sessionData, null, 2));
-      console.log('Saved create account session for future use');
-    } catch (error) {
-      console.log('Error saving session:', error.message);
-    }
+  // Check for Verify Your Email Address popup
+  const isVerifyEmailPopup = await page.evaluate((text) => {
+    return Array.from(document.querySelectorAll('*')).some(el => el.textContent.includes(text));
+  }, "Verify Your Email Address");
+  if (!isVerifyEmailPopup) {
+    console.log('Fail: Verify Your Email Address popup not found');
+    await browser.close();
+    process.exit(1);
   }
+  console.log('Pass: Verify Your Email Address popup found');
+  console.log('Verification initiated');
 
-  console.log('Please test create account success manually.');
-  console.log('PASS');
-  await browser.close();
-  process.exit(0);
+  // Wait for human to input verification code
+  console.log('Waiting for human to input verification code...');
+  await page.waitForFunction(() => {
+    const inputs = ['email-digit-0', 'email-digit-1', 'email-digit-2', 'email-digit-3', 'email-digit-4', 'email-digit-5'];
+    return inputs.every(id => {
+      const input = document.getElementById(id);
+      return input && input.value && input.value.length === 1;
+    });
+  }, { timeout: 0 }); // infinite wait
+  console.log('Verification code entered by human');
+
+  // Click Verify Code
+  await page.evaluate(() => {
+    const buttons = Array.from(document.querySelectorAll('button'));
+    const button = buttons.find(b => b.textContent.trim() === 'Verify Code');
+    if (button) button.click();
+  });
+  await takeScreenshotFunc();
+  console.log('Verification process completed');
+
+  // Wait for either "Verify Your Phone Number" text or 5 minutes timeout
+  console.log('Waiting for "Verify Your Phone Number" text or 5 minute timeout...');
+  try {
+    await page.waitForFunction(() => {
+      return Array.from(document.querySelectorAll('*')).some(el =>
+        el.textContent.includes("Verify Your Phone Number")
+      );
+    }, { timeout: 300000 }); // 5 minute timeout
+    console.log('Pass: Verify Your Phone Number found on the webpage');
+
+    await sleepFunc();
+    await takeScreenshotFunc();
+    console.log('PASS');
+    await browser.close();
+    process.exit(0);
+  } catch (error) {
+    console.log('Fail: Verify Your Phone Number not found within 5 minutes');
+    await browser.close();
+    process.exit(1);
+  }
 }
 
 const test_url = process.argv[2];

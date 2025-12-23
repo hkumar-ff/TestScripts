@@ -13,10 +13,18 @@
             ],
             // "program": "${workspaceFolder}\\testing-engine\\case2.js",
             // "program": "${workspaceFolder}\\testing-engine\\otherpop.js",
-            "program": "${workspaceFolder}\\testing-engine\\notsurepop.js",
+            // "program": "${workspaceFolder}\\testing-engine\\notsurepop.js",
+            // "program": "${workspaceFolder}\\testing-engine\\goingawaypop.js",
             // "program": "${workspaceFolder}\\testing-engine\\test-createaccount-form.js",
+            // "program": "${workspaceFolder}\\testing-engine\\test-ca-pedr-iev.js",
+            // "program": "${workspaceFolder}\\testing-engine\\test-ca-peca-iev.js",
+            // "program": "${workspaceFolder}\\testing-engine\\test-ca-ceca-iev.js",
+            // "program": "${workspaceFolder}\\testing-engine\\test-ca-cedr-iev.js",
+            "program": "${workspaceFolder}\\testing-engine\\test-ca-ceca-enpverif.js",
             // "program": "${workspaceFolder}\\testing-engine\\test-ca-woa.js",
-            "args": ["https://dev.controlcase.com"]
+            // "program": "${workspaceFolder}\\testing-engine\\test-ca-woa.js",
+
+            "args": ["https://dev.controlcase.com", "{\"email\":\"ceca03@farmfetch.com\",\"phone\":\"+918527489490\",\"name\":\"Scripted Testing\",\"organization\":\"Testing Co. Do not call\",\"password\":\"Alpha6&h!@#$%^&*\"}"]
         }
     ]
 }

@@ -26,7 +26,7 @@ async function runTest(test_url) {
   const min = String(now.getMinutes()).padStart(2, '0');
   const datetime = dd + mm + yyyy + hh + min;
   const name = 'Bot Testing ' + datetime;
-  const email = 'other' + datetime + '@autotest.com';
+  const email = 'goingaway' + datetime + '@autotest.com';
 
   try {
     // await sleepFunc();
@@ -67,16 +67,35 @@ async function runTest(test_url) {
   await clickNext(page, browser, "step 1 industry", sleepFunc, takeScreenshotFunc);
 
   // Step 2: Compliance Subject
-  await sleepFunc();
-  await chooseOptions(page, browser, "Who are you seeking compliance for?", "Step 2: Compliance Subject", ["My company needs to be compliant"], sleepFunc, takeScreenshotFunc);
-  await clickNext(page, browser, "Step 2: Compliance Subject", sleepFunc, takeScreenshotFunc);
+  // await sleepFunc();
+  // await chooseOptions(page, browser, "Who are you seeking compliance for?", "Step 2: Compliance Subject", ["My company needs to be compliant"], sleepFunc, takeScreenshotFunc);
+  // await clickNext(page, browser, "Step 2: Compliance Subject", sleepFunc, takeScreenshotFunc);
 
-  // Step 3: Certification Type
+  // Going Away Action: Move mouse to center then outside browser window to trigger exit popup
+  console.log('Performing "going away" action: moving mouse to center then outside browser window...');
   await sleepFunc();
-  await chooseOptions(page, browser, "Which security certification would you like to explore today?", "Step 3: Certification Type", ["Other"], sleepFunc, takeScreenshotFunc);
-  await clickNext(page, browser, "Step 3: Certification Type", sleepFunc, takeScreenshotFunc);
 
-  // Let us Assist You
+  // Get actual window dimensions from browser
+  const dimensions = await page.evaluate(() => {
+    return {
+      width: window.innerWidth,
+      height: window.innerHeight
+    };
+  });
+  const centerX = dimensions.width / 2;
+  const centerY = dimensions.height / 2;
+
+  console.log(`Window dimensions: ${dimensions.width}x${dimensions.height}, center: ${centerX}, ${centerY}`);
+
+  await page.mouse.move(centerX, centerY); // Move mouse to center of viewport
+  await sleepFunc();
+
+  await page.mouse.move(-100, -100); // Then move mouse outside viewport to trigger exit popup
+  await sleepFunc();
+  await takeScreenshotFunc();
+  console.log('Mouse moved from center to outside viewport - exit popup should appear now');
+
+  // Wait for popup to appear and check for "Let us Assist You" text
   await sleepFunc();
   await takeScreenshotFunc();
   const isAssistTextPresent = await page.evaluate((text) => {
@@ -87,7 +106,7 @@ async function runTest(test_url) {
     await browser.close();
     process.exit(1);
   }
-  console.log('Pass: Let us Assist You: ControlCase offers 60+ globally recognized certifications across all major industries, helping organizations meet compliance objectives with confidence.');
+  console.log('Pass: Exit popup appeared with "Let us Assist You" message');
 
   // Click on fields to trigger validation
   await sleepFunc();
@@ -133,14 +152,14 @@ async function runTest(test_url) {
   await sleepFunc();
   await page.type('#_r_2_', name);
   console.log('Name: '+name);
-  await page.type('#_r_3_', 'Testing Other Do not call');
+  await page.type('#_r_3_', 'Testing Going Away Do not call');
   await page.type('#_r_4_', email);
   console.log('Email: '+email);
   await page.type('input[placeholder="Enter phone number"]', '+91.8527489490');
   await takeScreenshotFunc();
   await sleepFunc();
 
-  // Click Select Area of Interesteh
+  // Click Select Area of Interest
   await sleepFunc();
   await takeScreenshotFunc();
   await page.click('.area-of-interest');
@@ -173,29 +192,29 @@ async function runTest(test_url) {
   // Fill Additional Message
   await sleepFunc();
   await page.click('#_r_7_');
-  await page.type('#_r_7_', 'Testing I need help with SOC2.');
+  await page.type('#_r_7_', 'Testing exit-intent popup triggered by going away action.');
   await takeScreenshotFunc();
   await sleepFunc();
 
 
   // Click Submit
   await takeScreenshotFunc();
-  await Promise.all([
-    page.waitForNavigation({ waitUntil: 'networkidle0' }),
-    page.click('button[type="submit"]')
-  ]);
+  await page.click('button[type="submit"]');
   await sleepFunc();
+  await takeScreenshotFunc();
 
-  // Check redirect
+  // Check for "Thank You" message (for exit-intent popup, no redirect happens)
   await sleepFunc();
-  const currentUrl = page.url();
-  if (!currentUrl.includes('/certifications/')) {
-    console.log('Fail: Could not redirect to certifications page');
+  const isThankYouPresent = await page.evaluate((text) => {
+    return Array.from(document.querySelectorAll('*')).some(el => el.textContent.includes(text));
+  }, "Thank you for your response");
+
+  if (!isThankYouPresent) {
+    console.log('Fail: "Thank you for your response" message not found after form submission');
     await browser.close();
     process.exit(1);
   }
-  console.log('Pass: Redirected to Certifications page');
-  await takeScreenshotFunc();
+  console.log('Pass: "Thank you for your response" message appeared after form submission');
 
   console.log('PASS');
   await browser.close();

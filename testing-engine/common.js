@@ -1,8 +1,8 @@
 const sleep = (sleepTime, page) => async () => {
-  await new Promise(resolve => setTimeout(resolve, 3000));
+  await new Promise(resolve => setTimeout(resolve, 5000));
   const isLoaded = await page.evaluate(() => document.readyState === 'complete');
   if (isLoaded) return;
-  const remaining = Math.max(0, (sleepTime - 3) * 1000);
+  const remaining = Math.max(0, (sleepTime - 5) * 1000);
   if (remaining > 0) await new Promise(resolve => setTimeout(resolve, remaining));
 };
 

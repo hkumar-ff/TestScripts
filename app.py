@@ -74,7 +74,8 @@ def add_test_case(suite_id):
     new_case = {
         'id': str(len(suite['testCases']) + 1),
         'name': data['name'],
-        'description': data['description']
+        'description': data['description'],
+        'inputData': data.get('inputData', {})
     }
     suite['testCases'].append(new_case)
     save_test_suites(suites)
@@ -106,9 +107,16 @@ def run_test(suite_id, case_id):
         test_url = request.json.get('url', '')
         if not test_url:
             return jsonify({'result': 'ERROR', 'message': 'Target URL not provided'}), 400
+
+        input_data = request.json.get('inputData', {})
+        # Save the input data to the test case for persistence
+        test_case['inputData'] = input_data
+        save_test_suites(suites)
+        input_json = json.dumps(input_data)
+
         env = os.environ.copy()
         env['SCREENSHOT_DIR'] = screenshot_dir
-        result = subprocess.run(['node', script_path, test_url], capture_output=True, text=True, timeout=300, env=env)
+        result = subprocess.run(['node', script_path, test_url, input_json], capture_output=True, text=True, timeout=300, env=env)
 
         # Determine result status
         if result.returncode == 0:
@@ -205,6 +213,29 @@ def get_test_case_history(suite_id, case_id):
                       if exec["suiteId"] == suite_id and exec["caseId"] == case_id]
     case_executions.sort(key=lambda x: x["timestamp"], reverse=True)
     return jsonify(case_executions)
+
+@app.route('/executions/<execution_id>')
+def get_execution(execution_id):
+    executions_data = load_executions()
+    execution = next((exec for exec in executions_data["executions"] if exec["id"] == execution_id), None)
+    if not execution:
+        return jsonify({'error': 'Execution not found'}), 404
+    return jsonify(execution)
+
+@app.route('/suites/<suite_id>/cases/<case_id>/input', methods=['PUT'])
+def update_test_case_input(suite_id, case_id):
+    data = request.json
+    suites = load_test_suites()
+    suite = next((s for s in suites if s['id'] == suite_id), None)
+    if not suite:
+        return jsonify({'error': 'Suite not found'}), 404
+    test_case = next((tc for tc in suite['testCases'] if tc['id'] == case_id), None)
+    if not test_case:
+        return jsonify({'error': 'Test case not found'}), 404
+
+    test_case['inputData'] = data.get('inputData', {})
+    save_test_suites(suites)
+    return jsonify({'success': True})
 
 @app.route('/screenshots/<path:filepath>')
 def serve_screenshot(filepath):
