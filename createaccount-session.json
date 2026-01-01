@@ -1,0 +1,81 @@
+{
+  "cookies": [
+    {
+      "name": "aws-waf-token",
+      "value": "4ec324ff-a69e-4af5-b52c-56678ab0d25f:BQoAfM5/ezc7AQAA:CJsGFThKg8i+HkWDCmq3RHjg49k+hxLRMLX+0SLdNecc1hW2CjzicE8MbbOASGo82BDr/wY6/RH3kZlUQChFBXLLYuwDxYIpaG+WoqndOUuPffEjGi27Sj6Hz3FjQHNpaEUgQmD5zAZ2yCigz1AvMyyD1W7+Al389tZTrFW4LEcNOGiH/KGmPUfJM7MmPcMsCKzCK8PV0K9Ma5FVEIceZNaV0g4A3C6cUcX4aYWfIgAxldqMcxMLS5uTXSn6obajoJsNqwCi3M6hZjLqPNeIArmZc3bmepN0p52OMgZn",
+      "domain": ".selfservicedev.controlcase.com",
+      "path": "/",
+      "expires": 1766859594,
+      "size": 363,
+      "httpOnly": false,
+      "secure": true,
+      "session": false,
+      "sameSite": "Lax",
+      "priority": "Medium",
+      "sameParty": false,
+      "sourceScheme": "Secure"
+    },
+    {
+      "name": "_uetvid",
+      "value": "f733a490df6911f09e37a7baec3d9bbb",
+      "domain": ".controlcase.com",
+      "path": "/",
+      "expires": 1800209943,
+      "size": 39,
+      "httpOnly": false,
+      "secure": false,
+      "session": false,
+      "sameSite": "Lax",
+      "priority": "Medium",
+      "sameParty": false,
+      "sourceScheme": "Secure"
+    },
+    {
+      "name": "cc_step8_finalize",
+      "value": "%7B%22certId%22%3A%22afdef452-72aa-4287-b99f-ef720e9f625c%22%2C%22ts%22%3A1766513963703%2C%22telemetrySessionId%22%3A%221766513824542_6qa9cj80q%22%7D",
+      "domain": ".controlcase.com",
+      "path": "/",
+      "expires": 1766517563.705147,
+      "size": 166,
+      "httpOnly": false,
+      "secure": true,
+      "session": false,
+      "sameSite": "Lax",
+      "priority": "Medium",
+      "sameParty": false,
+      "sourceScheme": "Secure"
+    },
+    {
+      "name": "_uetsid",
+      "value": "f732b4a0df6911f0a2171159ad8f1d16",
+      "domain": ".controlcase.com",
+      "path": "/",
+      "expires": 1766600343,
+      "size": 39,
+      "httpOnly": false,
+      "secure": false,
+      "session": false,
+      "sameSite": "Lax",
+      "priority": "Medium",
+      "sameParty": false,
+      "sourceScheme": "Secure"
+    },
+    {
+      "name": "_gcl_au",
+      "value": "1.1.1902400171.1766430665",
+      "domain": ".controlcase.com",
+      "path": "/",
+      "expires": 1774206665,
+      "size": 32,
+      "httpOnly": false,
+      "secure": false,
+      "session": false,
+      "sameSite": "Lax",
+      "priority": "Medium",
+      "sameParty": false,
+      "sourceScheme": "Secure"
+    }
+  ],
+  "timestamp": "2025-12-23T18:19:59.368Z",
+  "url": "https://dev.controlcase.com"
+}

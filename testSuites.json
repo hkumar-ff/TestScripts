@@ -6,37 +6,164 @@
             {
                 "id": "1",
                 "name": "test.js",
-                "description": "CMMC - My Customer"
+                "description": "CMMC - My Customer",
+                "inputData": {}
             },
             {
                 "id": "2",
                 "name": "case2.js",
-                "description": "CMMC - Myself"
+                "description": "CMMC - Myself",
+                "inputData": {}
             },
             {
                 "id": "3",
                 "name": "cmmc-vendor.js",
-                "description": "CMMC Vendor Scan"
+                "description": "CMMC Vendor Scan",
+                "inputData": {}
             },
             {
                 "id": "4",
                 "name": "pcidss-vendor.js",
-                "description": "PCI DSS - Vendor"
+                "description": "PCI DSS - Vendor",
+                "inputData": {}
             },
             {
                 "id": "5",
                 "name": "pcidss-self.js",
-                "description": "PCI DSS - MySelf"
+                "description": "PCI DSS - MySelf",
+                "inputData": {}
             },
             {
                 "id": "6",
                 "name": "test-createaccount-form.js",
-                "description": "Create Account Form Validation"
+                "description": "Create Account Form Validation",
+                "inputData": {}
             },
             {
                 "id": "7",
                 "name": "otherpop.js",
-                "description": "Other Pop-up contact us form"
+                "description": "Other Pop-up contact us form",
+                "inputData": {}
+            },
+            {
+                "id": "8",
+                "name": "test-ca-pedr-iev.js",
+                "description": "Testing Create Account Feature for Public Email Direct Register - Inline email verification NO",
+                "inputData": {}
+            },
+            {
+                "id": "9",
+                "name": "test-ca-pedr-iev.js",
+                "description": "Create Account - Public Email Direct Register x Account creation + Login with SMS in a single flow - NO",
+                "inputData": {}
+            },
+            {
+                "id": "10",
+                "name": "test-ca-peca-iev.js",
+                "description": "Create Account - Public Email /  Completed Assessment X Step2 Inline email Verification output No",
+                "inputData": {}
+            },
+            {
+                "id": "11",
+                "name": "test-ca-peca-iev.js",
+                "description": "Create Account - Public Email / Completed Assessment X Login with SMS in a single flow - NO",
+                "inputData": {}
+            },
+            {
+                "id": "12",
+                "name": "test-ca-cedr-iev.js",
+                "description": "Testing Create Account Feature for Company Email Direct Register - Inline email verification YES",
+                "inputData": {
+                    "email": "h05@farmfetch.com",
+                    "name": "Scripted Testing",
+                    "organization": "Testing Co. Do not call",
+                    "password": "Alpha6&h!@#$%^&*",
+                    "phone": "+918527489490"
+                }
+            },
+            {
+                "id": "13",
+                "name": "test-ca-cedr-iev.js",
+                "description": "Testing Create Account Feature for Company Email Direct Register X Step3: Account Creation + login with SMS in a single flow - NO",
+                "inputData": {
+                    "email": "h09@farmfetch.com",
+                    "name": "Scripted Testing",
+                    "organization": "Testing Co. Do not call",
+                    "password": "Alpha6&h!@#$%^&*",
+                    "phone": "+918527489490"
+                }
+            },
+            {
+                "id": "14",
+                "name": "test-ca-ceca-iev.js",
+                "description": "Testing Create Account Feature for Company Email Completed Assessment X Step2: Inline Email Verification - YES",
+                "inputData": {
+                    "email": "ceca01@farmfetch.com",
+                    "name": "Scripted Testing",
+                    "organization": "Testing Co. Do not call",
+                    "password": "Alpha6&h!@#$%^&*",
+                    "phone": "+918527489490"
+                }
+            },
+            {
+                "id": "15",
+                "name": "test-ca-ceca-enpverif.js",
+                "description": "Testing Create Account Feature for Company Email Completed Assessment X Step3: Account Creation + login with SMS in a single flow - YES",
+                "inputData": {
+                    "email": "ceca04@farmfetch.com",
+                    "name": "Scripted Testing",
+                    "organization": "Testing Co. Do not call",
+                    "password": "Alpha6&h!@#$%^&*",
+                    "phone": "+918527489490"
+                }
+            },
+            {
+                "id": "16",
+                "name": "test-ca-pedr-sf.js",
+                "description": "Testing Create Account Feature for Public Email Direct Register X Step1: Salesforce Record Created - NO",
+                "inputData": {}
+            },
+            {
+                "id": "17",
+                "name": "test-ca-cedr-sf.js",
+                "description": "Testing Create Account Feature for Company Email Direct Register X Step1: Salesforce Record Created - NO",
+                "inputData": {
+                    "email": "h11@farmfetch.com",
+                    "name": "Scripted Testing",
+                    "organization": "Testing Co. Do not call",
+                    "password": "Alpha6&h!@#$%^&*",
+                    "phone": "+918527489490"
+                }
+            },
+            {
+                "id": "18",
+                "name": "test-ca-peca-sf.js",
+                "description": "Testing Create Account Feature for Public Email Completed Assessment X Step1: Salesforce Record Created - YES",
+                "inputData": {}
+            },
+            {
+                "id": "19",
+                "name": "test-ca-ceca-sf.js",
+                "description": "Testing Create Account Feature for Company Email Completed Assessment X Step1: Salesforce Record Created - YES",
+                "inputData": {
+                    "email": "h13@farmfetch.com",
+                    "name": "Scripted Testing",
+                    "organization": "Testing Co. Do not call",
+                    "password": "Alpha6&h!@#$%^&*",
+                    "phone": "+918527489490"
+                }
+            },
+            {
+                "id": "20",
+                "name": "notsurepop.js",
+                "description": "Not sure option clicked, pop up form clicked and salesforce record verified.",
+                "inputData": {}
+            },
+            {
+                "id": "21",
+                "name": "goingawaypop.js",
+                "description": "Going away user filling the form. ",
+                "inputData": {}
             }
         ]
     }

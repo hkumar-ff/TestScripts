@@ -28,7 +28,7 @@ async function runTest(test_url) {
   const datetime = dd + mm + yyyy + hh + min;
   const name = 'Bot Testing ' + datetime;
   const email = 'notsure' + datetime + '@autotest.com';
-  const skipTestSteps = true; // Set to false to run full test
+  const skipTestSteps = false; // Set to false to run full test
 
   try {
     // await sleepFunc();
@@ -140,7 +140,14 @@ async function runTest(test_url) {
     await page.type('#_r_3_', 'Testing Other Do not call');
     await page.type('#_r_4_', email);
     console.log('Email: '+email);
-    await page.type('input[placeholder="Enter phone number"]', '+91.8527489490');
+    // Clear phone input first, then type
+  // Clear phone input first, then type
+    await page.focus('input[placeholder="Enter phone number"]');
+    await page.keyboard.down('Control');
+    await page.keyboard.press('a');
+    await page.keyboard.up('Control');
+    await page.keyboard.press('Delete');
+    await page.type('input[placeholder="Enter phone number"]', '+918527489490');
     await takeScreenshotFunc();
     await sleepFunc();
 
@@ -272,15 +279,9 @@ async function runTest(test_url) {
         }
         await sleepFunc();
       }
-      // await sleepFunc();
-      // // Check "Don't ask again" checkbox
-      // await page.$eval('#RememberDeviceCheckbox', el => el.checked = true);
-      // await takeScreenshotFunc();
 
       await sleepFunc();
       await page.click('input#save');
-      // await sleepFunc();
-      // await takeScreenshotFunc();
     }
 
     // Save cookies for future sessions
@@ -293,160 +294,266 @@ async function runTest(test_url) {
     }
   }
 
-  // Navigate in Salesforce
-  await sleepFunc();
+  console.log('Salesforce login sequence completed successfully');
 
-  // Step 1: Click search button with multiple fallback selectors
-  let searchClicked = false;
-  const searchButtonSelectors = [
-    '[aria-label*="Search"]',
-    'div.slds-global-header__item_search button',
-    'xpath://*[@id="oneHeader"]/div[2]/div[2]/div/div/button',
-    'pierce/div.slds-global-header__item_search button',
-    'text/Search'
-  ];
-
-  for (const selector of searchButtonSelectors) {
-    try {
-      if (selector.startsWith('xpath:')) {
-        const xpath = selector.replace('xpath:', '');
-        const elements = await page.$x(xpath);
-        if (elements.length > 0) {
-          await elements[0].click();
-          console.log(`Clicked search button using xpath: ${xpath}`);
-          searchClicked = true;
-          break;
-        }
-      } else if (selector.startsWith('pierce/')) {
-        const pierceSelector = selector.replace('pierce/', '');
-        await page.locator(pierceSelector).click();
-        console.log(`Clicked search button using pierce selector: ${pierceSelector}`);
-        searchClicked = true;
-        break;
-      } else if (selector.startsWith('text/')) {
-        const text = selector.replace('text/', '');
-        try {
-          const result = await page.evaluate((searchText) => {
-            const buttons = Array.from(document.querySelectorAll('button'));
-            const button = buttons.find(b => b.textContent.trim().toLowerCase().includes(searchText.toLowerCase()));
-            if (button) {
-              button.click();
-              return true;
-            }
-            return false;
-          }, text);
-          if (result) {
-            console.log(`Clicked search button with text: ${text}`);
-            searchClicked = true;
-            break;
-          }
-        } catch (error) {
-          if (error.message.includes('Execution context was destroyed')) {
-            console.log('Navigation occurred during search button click, continuing...');
-            searchClicked = true;
-            break;
-          } else {
-            console.log(`Failed to click with text selector ${selector}: ${error.message}`);
-            continue;
-          }
-        }
-      } else {
-        await page.click(selector);
-        console.log(`Clicked search button using selector: ${selector}`);
-        searchClicked = true;
-        break;
-      }
-    } catch (error) {
-      console.log(`Failed to click with selector ${selector}: ${error.message}`);
-      continue;
-    }
-  }
-
-  if (!searchClicked) {
-    console.log('Failed to click search button with any selector');
-  }
-
-  await sleepFunc();
-  await takeScreenshotFunc();
-
-  // Step 2: Type in search input with multiple fallback selectors
-  const searchInputSelectors = [
-    '[aria-label*="Search"][role="searchbox"]',
-    '#input-156',
-    'xpath://*[@id="input-156"]',
-    'pierce/#input-156'
-  ];
-
-  let inputTyped = false;
-  for (const selector of searchInputSelectors) {
-    try {
-      if (selector.startsWith('xpath:')) {
-        const xpath = selector.replace('xpath:', '');
-        const elements = await page.$x(xpath);
-        if (elements.length > 0) {
-          await elements[0].type('hkumar@farmfetch.com');
-          console.log(`Typed in search input using xpath: ${xpath}`);
-          inputTyped = true;
-          break;
-        }
-      } else if (selector.startsWith('pierce/')) {
-        const pierceSelector = selector.replace('pierce/', '');
-        await page.locator(pierceSelector).type('hkumar@farmfetch.com');
-        console.log(`Typed in search input using pierce selector: ${pierceSelector}`);
-        inputTyped = true;
-        break;
-      } else {
-        await page.type(selector, 'hkumar@farmfetch.com');
-        console.log(`Typed in search input using selector: ${selector}`);
-        inputTyped = true;
-        break;
-      }
-    } catch (error) {
-      console.log(`Failed to type with selector ${selector}: ${error.message}`);
-      continue;
-    }
-  }
-
-  if (!inputTyped) {
-    console.log('Failed to type in search input with any selector');
-  }
-
-  await takeScreenshotFunc();
-
-  // Step 3: Press Enter key
-  await sleepFunc();
-  await page.keyboard.press('Enter');
-  await sleepFunc();
-  await takeScreenshotFunc();
-
-  // Check if email is found in listViewContainer
-  let isEmailPresent = false;
   try {
-    isEmailPresent = await page.evaluate((email) => {
-      const container = document.querySelector('.listViewContainer');
-      if (container) {
-        return container.textContent.includes(email);
-      }
-      return false;
-    }, email);
-  } catch (error) {
-    if (error.message.includes('Execution context was destroyed')) {
-      console.log('Navigation occurred, skipping email validation check');
-      isEmailPresent = true; // Assume success if navigation happened
-    } else {
-      console.log(`Error during email validation: ${error.message}`);
+    // Navigate to chatter page and perform search
+    console.log('Navigating to Salesforce Chatter and performing search...');
+
+    {
+      const targetPage = page;
+      await targetPage.setViewport({
+        width: 1920,
+        height: 911
+      });
+      await sleepFunc();
     }
-  }
 
-  if (isEmailPresent) {
-    console.log('PASS: email : ' + email + ' found in selfservice.');
-  } else {
-    console.log('Fail: email not found in selfservice.');
-  }
+    {
+      const targetPage = page;
+      await targetPage.goto('https://d54000000qsyvea0--devinstnce.sandbox.lightning.force.com/lightning/page/chatter');
+      await sleepFunc();
+      await takeScreenshotFunc();
+      await sleepFunc();
+    }
 
-  console.log('PASS');
-  await browser.close();
-  process.exit(0);
+    {
+      const targetPage = page;
+      await puppeteer.Locator.race([
+        targetPage.locator('::-p-aria(Search)'),
+        targetPage.locator('#312\\:0'),
+        targetPage.locator('::-p-xpath(//*[@id="312:0"])'),
+        targetPage.locator(':scope >>> #312\\:0')
+      ])
+        .setTimeout(5000)
+        .click({
+          offset: {
+            x: 72.78125,
+            y: 20,
+          },
+        });
+      await sleepFunc();
+      await takeScreenshotFunc();
+      await sleepFunc();
+    }
+    console.log('Clicked search button.');
+
+    {
+      const targetPage = page;
+      await puppeteer.Locator.race([
+        targetPage.locator('::-p-aria(Search by object type)'),
+        targetPage.locator('#combobox-input-146'),
+        targetPage.locator('::-p-xpath(//*[@id="combobox-input-146"])'),
+        targetPage.locator(':scope >>> #combobox-input-146'),
+        targetPage.locator('::-p-text(Search: Leads)')
+      ])
+        .setTimeout(5000)
+        .click({
+          offset: {
+            x: 62,
+            y: 19,
+          },
+        });
+      await sleepFunc();
+      await takeScreenshotFunc();
+      await sleepFunc();
+    }
+
+    {
+      const targetPage = page;
+      await puppeteer.Locator.race([
+        targetPage.locator('ul:nth-of-type(1) > li:nth-of-type(11) span.slds-media__body'),
+        targetPage.locator('::-p-xpath(//*[@id="combobox-input-146-9-146"]/span[2])'),
+        targetPage.locator(':scope >>> ul:nth-of-type(1) > li:nth-of-type(11) span.slds-media__body')
+      ])
+        .setTimeout(5000)
+        .click({
+          offset: {
+            x: 53,
+            y: 14,
+          },
+        });
+      await sleepFunc();
+      await takeScreenshotFunc();
+      await sleepFunc();
+    }
+    console.log('Selected Leads for scoped search.');
+
+    {
+      const targetPage = page;
+      await puppeteer.Locator.race([
+        targetPage.locator('::-p-aria(Search Leads)'),
+        targetPage.locator('#input-149'),
+        targetPage.locator('::-p-xpath(//*[@id="input-149"])'),
+        targetPage.locator(':scope >>> #input-149')
+      ])
+        .setTimeout(5000)
+        .click({
+          offset: {
+            x: 75,
+            y: 19,
+          },
+        });
+      await sleepFunc();
+      await takeScreenshotFunc();
+      await sleepFunc();
+    }
+
+    {
+      const targetPage = page;
+      await puppeteer.Locator.race([
+        targetPage.locator('::-p-aria(Search Leads)'),
+        targetPage.locator('#input-149'),
+        targetPage.locator('::-p-xpath(//*[@id="input-149"])'),
+        targetPage.locator(':scope >>> #input-149')
+      ])
+        .setTimeout(5000)
+        .fill(email); // Use the email from notsurepop.js
+      await sleepFunc();
+      await takeScreenshotFunc();
+      await sleepFunc();
+    }
+    console.log('Filled search input with email:', email);
+
+    {
+      const targetPage = page;
+      await targetPage.keyboard.down('Enter');
+      await sleepFunc();
+    }
+
+    {
+      const targetPage = page;
+      await targetPage.keyboard.up('Enter');
+      await sleepFunc();
+    }
+
+    {
+      const targetPage = page;
+      await puppeteer.Locator.race([
+        targetPage.locator('div.leftContent > div'),
+        targetPage.locator('::-p-xpath(//*[@id="brandBand_2"]/div/div/div[2]/div/div[2]/div/div/div[1]/div/div[1]/div)'),
+        targetPage.locator(':scope >>> div.leftContent > div')
+      ])
+        .setTimeout(5000)
+        .click({
+          delay: 742.1999999880791,
+          offset: {
+            x: 0,
+            y: 9,
+          },
+        });
+      await sleepFunc();
+      await takeScreenshotFunc();
+      await sleepFunc();
+    }
+
+    await sleepFunc();
+    await takeScreenshotFunc();
+    await sleepFunc();
+
+    console.log('Search completed. Now attempting to open first lead...');
+
+    // Attempt to click on first lead in the table
+    const targetPage = page;
+    await puppeteer.Locator.race([
+      targetPage.locator('::-p-aria(Bot Testing[role="link"])'),
+      targetPage.locator('tbody th a'),
+      targetPage.locator('::-p-xpath(//*[@id="brandBand_2"]/div/div/div[2]/div/div[2]/div/div/div[2]/div/div/div/div[2]/div[2]/div[1]/div/div/table/tbody/tr/th/span/a)'),
+      targetPage.locator(':scope >>> tbody th a'),
+      targetPage.locator('::-p-text(Bot Testing)')
+    ])
+      .setTimeout(5000)
+      .click({
+        offset: {
+          x: 78,
+          y: 8.875,
+        },
+      });
+    await sleepFunc();
+    await takeScreenshotFunc();
+    await sleepFunc();
+
+    // Click on Details tab
+    await page.click('#detailTab__item');
+    await sleepFunc();
+
+    // Click to expand sections to ensure content is loaded
+    await page.click('records-record-layout-section:nth-of-type(1) records-record-layout-row:nth-of-type(1) records-record-layout-item.item-left');
+    await sleepFunc();
+
+    await page.click('records-record-layout-section:nth-of-type(1) records-record-layout-row:nth-of-type(2) records-record-layout-item.item-left');
+    await sleepFunc();
+
+    await page.click('records-record-layout-row:nth-of-type(22) records-record-layout-item.item-left');
+    await sleepFunc();
+
+    // Get the full page text content
+    const pageText = await page.evaluate(() => document.body.textContent);
+
+    // Take screenshot of the loaded Salesforce lead details page
+    await takeScreenshotFunc();
+
+    // Clean phone number for search (remove spaces, hyphens, brackets, keep +)
+    const cleanPhone = '+91.8527489490'.replace(/[\.\-\s\(\)]/g, '');
+
+    // Check if name is found on the page
+    if (!pageText.includes(name)) {
+      console.log('FAIL: Name "' + name + '" not found in Salesforce lead details.');
+      await browser.close();
+      process.exit(1);
+    }
+
+    // Check if cleaned phone number is found on the page
+    if (!pageText.includes(cleanPhone)) {
+      console.log('FAIL: Phone number "' + cleanPhone + '" not found in Salesforce lead details.');
+      await browser.close();
+      process.exit(1);
+    }
+
+    // Check if company name is found on the page
+    if (!pageText.includes('Testing Other Do not call')) {
+      console.log('FAIL: Company name "Testing Other Do not call" not found in Salesforce lead details.');
+      await browser.close();
+      process.exit(1);
+    }
+
+    // Check if area of interest is found on the page
+    if (!pageText.includes('Firewall Security Review;Professional Services;Cybersecurity Services')) {
+      console.log('FAIL: Area of interest "Firewall Security Review;Professional Services;Cybersecurity Services" not found in Salesforce lead details.');
+      await browser.close();
+      process.exit(1);
+    }
+
+    // Check if assistance message is found on the page
+    if (!pageText.includes('Assistance required:- Testing I am not sure which certification applies to me.')) {
+      console.log('FAIL: Assistance message "Assistance required:- Testing I am not sure which certification applies to me." not found in Salesforce lead details.');
+      await browser.close();
+      process.exit(1);
+    }
+
+    // Check if summary of choices is found on the page
+    if (!pageText.includes('Summary of Choices:- Industry: Retails and Payment Providers, For company, Certification: Not Sure')) {
+      console.log('FAIL: Summary of choices "Summary of Choices:- Industry: Retails and Payment Providers, For company, Certification: Not Sure" not found in Salesforce lead details.');
+      await browser.close();
+      process.exit(1);
+    }
+
+    console.log('PASS: Name - Form: "' + name + '", Found in Salesforce: YES');
+    console.log('PASS: Phone - Form: "+91.8527489490", Found in Salesforce: "' + cleanPhone + '"');
+    console.log('PASS: Company - Form: "Testing Other Do not call", Found in Salesforce: YES');
+    console.log('PASS: Area of Interest - Form: "Firewall Security Review;Professional Services;Cybersecurity Services", Found in Salesforce: YES');
+    console.log('PASS: Assistance Message - Form: "Testing I am not sure which certification applies to me.", Found in Salesforce: YES');
+    console.log('PASS: Summary of Choices - Form: "Summary of Choices:- Industry: Retails and Payment Providers, For company, Certification: Not Sure", Found in Salesforce: YES');
+    console.log('PASS: email : ' + email + ' found in Salesforce.');
+    await browser.close();
+    process.exit(0);
+  } catch (error) {
+    // If any step fails (e.g., timeout), lead not found, which is FAIL
+    await takeScreenshotFunc();
+    console.log('FAIL: email not found in Salesforce.');
+    await browser.close();
+    process.exit(1);
+  }
 }
 
 const test_url = process.argv[2];
