@@ -26,14 +26,20 @@
             // "program": "${workspaceFolder}\\testing-engine\\test-ca-cedr-sf.js",
             // "program": "${workspaceFolder}\\testing-engine\\test-ca-peca-sf.js",
             // "program": "${workspaceFolder}\\testing-engine\\test-ca-ceca-sf.js",
-            "program": "${workspaceFolder}\\testing-engine\\test.js",
+            // "program": "${workspaceFolder}\\testing-engine\\test.js",
             // "program": "${workspaceFolder}\\testing-engine\\<scr name>.js",
             // "program": "${workspaceFolder}\\testing-engine\\<scr name>.js",
             // "program": "${workspaceFolder}\\testing-engine\\<scr name>.js",
             // "program": "${workspaceFolder}\\testing-engine\\<scr name>.js",
+            // "program": "${workspaceFolder}\\testing-engine\\ff_cookagain.js",
+            // "program": "${workspaceFolder}\\testing-engine\\test_customize.js",
+            // "program": "${workspaceFolder}\\testing-engine\\ff_login_nosignup.js",
+            "program": "${workspaceFolder}\\testing-engine\\ff_cookagain_110326_update.js",
             
-
-            "args": ["https://www.controlcase.com", "{\"email\":\"h12@farmfetch.com\",\"phone\":\"+918527489490\",\"name\":\"Scripted Testing\",\"organization\":\"Testing Co. Do not call\",\"password\":\"Alpha6&h!@#$%^&*\"}"]
+            "env": {"DEBUG": "false"},
+            // "args": ["https://staging.controlcase.com", "{\"email\":\"h12@farmfetch.com\",\"phone\":\"+918527489490\",\"name\":\"Scripted Testing\",\"organization\":\"Testing Co. Do not call\",\"password\":\"Alpha6&h!@#$%^&*\"}"]
+            // "args": ["https://stageff.com", "{\"email\":\"h12@farmfetch.com\",\"phone\":\"+918527489490\",\"name\":\"Scripted Testing\",\"organization\":\"Testing Co. Do not call\",\"password\":\"Alpha6&h!@#$%^&*\"}"]
+            "args": ["https://stageff.com", "{\"email\": \"hktesting@farmfetch.com\",\"password\": \"abcd1234\"}"]
         }
     ]
 }

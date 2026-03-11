@@ -166,5 +166,73 @@
                 "inputData": {}
             }
         ]
+    },
+    {
+        "id": "2",
+        "name": "FarmFetch All Tests",
+        "testCases": [
+            {
+                "id": "1",
+                "name": "ff_cookagain.js",
+                "description": "check if latest 5 recepies present in cook again section",
+                "inputData": {}
+            },
+            {
+                "id": "2",
+                "name": "ff_customize.js",
+                "description": "Customize Ingredients Logged in user",
+                "inputData": {}
+            },
+            {
+                "id": "3",
+                "name": "ff_login.js",
+                "description": "For Login Testing",
+                "inputData": {
+                    "email": "hktesting@farmfetch.com",
+                    "password": "abcd1234"
+                }
+            },
+            {
+                "id": "4",
+                "name": "ff_login_nosignup.js",
+                "description": "New way of login testing requested on 11 March",
+                "inputData": {
+                    "email": "hktesting@farmfetch.com",
+                    "password": "abcd1234"
+                }
+            }
+        ],
+        "targetUrl": "https://stageff.com"
+    },
+    {
+        "id": "3",
+        "name": "FF Stage 11 March",
+        "targetUrl": "https://stageff.com",
+        "testCases": [
+            {
+                "id": "1",
+                "name": "ff_login_nosignup.js",
+                "description": "Login Testing with auto popping up new test screen",
+                "inputData": {
+                    "email": "hktesting@farmfetch.com",
+                    "password": "abcd1234"
+                }
+            },
+            {
+                "id": "2",
+                "name": "ff_cookagain_110326_update.js",
+                "description": "cook again testing",
+                "inputData": {
+                    "email": "hktesting@farmfetch.com",
+                    "password": "abcd1234"
+                }
+            },
+            {
+                "id": "3",
+                "name": "ff_customize.js",
+                "description": "Customize Ingredients",
+                "inputData": {}
+            }
+        ]
     }
 ]

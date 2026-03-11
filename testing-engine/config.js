@@ -1,7 +1,9 @@
 const startPage = "https://dev.controlcase.com";
-const sleepTime = 10;
+const sleepTime = 20;
+const debugEnabled = process.env.DEBUG === 'true' || false;
 
-module.exports = {
+export {
   startPage,
-  sleepTime
+  sleepTime,
+  debugEnabled
 }

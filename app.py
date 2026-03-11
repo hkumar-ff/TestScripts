@@ -39,11 +39,16 @@ def get_suites():
 
 @app.route('/suites', methods=['POST'])
 def create_suite():
-    data = request.json
+    data = request.get_json(silent=True) or request.form.to_dict() or {}
+    name = (data.get('name') or '').strip()
+    if not name:
+        return jsonify({'error': 'Suite name is required'}), 400
+
     suites = load_test_suites()
     new_suite = {
         'id': str(len(suites) + 1),
-        'name': data['name'],
+        'name': name,
+        'targetUrl': data.get('targetUrl', ''),
         'testCases': data.get('testCases', [])
     }
     suites.append(new_suite)
@@ -104,7 +109,10 @@ def run_test(suite_id, case_id):
     os.makedirs(screenshot_dir, exist_ok=True)
 
     try:
+        # Get test URL from request, or fall back to suite's targetUrl
         test_url = request.json.get('url', '')
+        if not test_url and suite.get('targetUrl'):
+            test_url = suite['targetUrl']
         if not test_url:
             return jsonify({'result': 'ERROR', 'message': 'Target URL not provided'}), 400
 
@@ -236,6 +244,27 @@ def update_test_case_input(suite_id, case_id):
     test_case['inputData'] = data.get('inputData', {})
     save_test_suites(suites)
     return jsonify({'success': True})
+
+@app.route('/suites/<suite_id>/target-url', methods=['PUT'])
+def update_suite_target_url(suite_id):
+    data = request.json
+    suites = load_test_suites()
+    suite = next((s for s in suites if s['id'] == suite_id), None)
+    if not suite:
+        return jsonify({'error': 'Suite not found'}), 404
+
+    suite['targetUrl'] = data.get('targetUrl', '')
+    save_test_suites(suites)
+    return jsonify({'success': True})
+
+@app.route('/suites/<suite_id>/target-url', methods=['GET'])
+def get_suite_target_url(suite_id):
+    suites = load_test_suites()
+    suite = next((s for s in suites if s['id'] == suite_id), None)
+    if not suite:
+        return jsonify({'error': 'Suite not found'}), 404
+
+    return jsonify({'targetUrl': suite.get('targetUrl', '')})
 
 @app.route('/screenshots/<path:filepath>')
 def serve_screenshot(filepath):

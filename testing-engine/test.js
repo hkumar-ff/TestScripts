@@ -1,6 +1,6 @@
-const puppeteer = require('puppeteer');
-const { sleepTime } = require('./config.js');
-const { sleep, takeScreenshot, chooseOptions, clickNext } = require('./common');
+import puppeteer from 'puppeteer';
+import { sleepTime, debugEnabled } from './config.js';
+import { sleep, takeScreenshot, chooseOptions, clickNext } from './common.js';
 
 async function runTest(test_url) {
   if (!test_url) {
@@ -211,7 +211,24 @@ async function runTest(test_url) {
 
   // Step 3: Certification Type
   await sleepFunc();
+  // await sleepFunc();
+  await clickNext(page, browser, "Step 3: Certification Type", sleepFunc, takeScreenshotFunc);
+  await sleepFunc();
   await chooseOptions(page, browser, "Which security certification would you like to explore today?", "Step 3: Certification Type", ["CMMC"], sleepFunc, takeScreenshotFunc);
+
+  // Check for hrs-required
+  await sleepFunc();
+  const hrsRequiredText = await page.evaluate(() => {
+    const pTag = document.querySelector('p.hrs-required');
+    return pTag ? pTag.innerText.trim() : null;
+  });
+  if (hrsRequiredText === "75 requirements needed for CMMC Compliance") {
+    console.log('PASS: 75 requirements needed for CMMC Compliance is found');
+  } else {
+    console.log('FAIL: 75 requirements needed for CMMC Compliance is not found');
+    await browser.close();
+    process.exit(1);
+  }
 
   // Print all options available on Certification Type page
   await sleepFunc();
@@ -229,22 +246,148 @@ async function runTest(test_url) {
     process.exit(1);
   }
 
-  await clickNext(page, browser, "Step 3: Certification Type", sleepFunc, takeScreenshotFunc);
 
   // Step 4: Environment
-  await sleepFunc();
-  await chooseOptions(page, browser, "Please select the environment that applies to your customer", "Step 4: Environment", ["Azure Gov Cloud"], sleepFunc, takeScreenshotFunc);
   await clickNext(page, browser, "Step 4: Environment", sleepFunc, takeScreenshotFunc);
+  await sleepFunc();
+  const timelineCheckStep4 = await page.evaluate(() => {
+    const wrappers = Array.from(document.querySelectorAll('div.step-timeline-wrapper'));
+    if (wrappers.length < 4) return false;
+    const step1Completed = wrappers[0].classList.contains('completed');
+    const step2Completed = wrappers[1].classList.contains('completed');
+    const step3Completed = wrappers[2].classList.contains('completed');
+    const step4Active = wrappers[3].classList.contains('active');
+    const restPending = wrappers.slice(4).every(el => el.classList.contains('pending'));
+    return step1Completed && step2Completed && step3Completed && step4Active && restPending;
+  });
+  if (timelineCheckStep4) {
+    console.log('PASS: Steps 1, 2, 3 are completed, step 4 is active in left navigation');
+  } else {
+    console.log('FAIL: Left navigation does not match completed steps for 1-3 and active 4');
+    await browser.close();
+    process.exit(1);
+  }
+
+  // Print all options available on environment page
+  await sleepFunc();
+  const envOptions = await page.evaluate(() => {
+    const labels = Array.from(document.querySelectorAll('label.custom-radio-wrapper'));
+    return labels.map(label => label.innerText.trim());
+  });
+  console.log('All options on Environment page:', envOptions);
+  console.log('Count of options:', envOptions.length);
+  if (envOptions.length === 8) {
+    console.log('PASS: Total options on Environment page are 8');
+  } else {
+    console.log('FAIL: Total options on Environment page are not 8');
+    await browser.close();
+    process.exit(1);
+  }
+
+  const nextButtonDisabled = await page.evaluate(() => {
+    const nextDiv = document.querySelector('div.next');
+    return nextDiv && nextDiv.classList.contains('disabled');
+  });
+  if (nextButtonDisabled) {
+    console.log('PASS: The next button is disabled without any selection');
+  } else {
+    console.log('FAIL: The next button is enabled without any selection');
+    await browser.close();
+    process.exit(1);
+  }
+  await chooseOptions(page, browser, "Please select the environment that applies to your customer", "Step 4: Environment", ["AWS"], sleepFunc, takeScreenshotFunc);
+  // Check requirements after selecting AWS
+  await sleepFunc();
+  const reqReadyText = await page.evaluate(() => {
+    const pTag = document.querySelector('p.requirements-ready');
+    return pTag ? pTag.innerText.trim() : null;
+  });
+  const reqPercentText = await page.evaluate(() => {
+    const pTag = document.querySelector('p.requirements-ready-percent');
+    return pTag ? pTag.innerText.trim() : null;
+  });
+  if (reqReadyText === "16 Requirements ready" && reqPercentText === "21% Ready") {
+    console.log('PASS: 16 Requirements ready and 21% Ready found after selecting AWS');
+  } else {
+    console.log('FAIL: Requirements ready is not 16 and/or % is not 21 after selecting AWS');
+    await browser.close();
+    process.exit(1);
+  }
+  // Check if next button is now enabled after selection
+  await sleepFunc();
+  const nextButtonEnabled = await page.evaluate(() => {
+    const nextDiv = document.querySelector('div.next');
+    return nextDiv && !nextDiv.classList.contains('disabled');
+  });
+  if (nextButtonEnabled) {
+    console.log('PASS: The next button is enabled after selection');
+  } else {
+    console.log('FAIL: The next button is still disabled after selection');
+    await browser.close();
+    process.exit(1);
+  }
+
 
   // Step 5: IT Footprint
+  if (debugEnabled) console.log('[DEBUG] Starting Step 5: IT Footprint');
   await sleepFunc();
-  await chooseOptions(page, browser, "Please select the closest that apply to your customer", "Step 5: IT Footprint", ["Less than 50", "2 or less", "6 to 25"], sleepFunc, takeScreenshotFunc);
   await clickNext(page, browser, "Step 5: IT Footprint", sleepFunc, takeScreenshotFunc);
 
+  // Check for three groups of radio buttons in sub-options-wrapper divs and specific legend tags
+  await sleepFunc();
+  const step5ElementsCheck = await page.evaluate(() => {
+    const wrappers = Array.from(document.querySelectorAll('div.sub-options-wrapper'));
+    if (wrappers.length !== 3) return false;
+
+    // Check each wrapper has radio buttons (groups)
+    const hasRadioGroups = wrappers.every(wrapper => {
+      const radios = wrapper.querySelectorAll('input[type="radio"]');
+      return radios.length > 0;
+    });
+    if (!hasRadioGroups) return false;
+
+    // Check for legend tags with "Assets", "Applications", and "Employees"
+    const legends = Array.from(document.querySelectorAll('legend'));
+    const legendTexts = legends.map(l => l.textContent.trim());
+    const hasAssets = legendTexts.includes('Assets');
+    const hasApplications = legendTexts.includes('Applications');
+    const hasEmployees = legendTexts.includes('Employees');
+
+    return hasAssets && hasApplications && hasEmployees;
+  });
+
+  if (step5ElementsCheck) {
+    console.log('PASS: After reaching Step 5: IT Footprint, three groups of radio buttons with titles "Assets", "Applications", "Employees" are present.');
+  } else {
+    console.log('FAIL: After reaching Step 5: IT Footprint, three groups of radio buttons with titles "Assets", "Applications", "Employees" are not found.');
+    await browser.close();
+    process.exit(1);
+  }
+
+  await chooseOptions(page, browser, "Please select the closest that apply to your customer", "Step 5: IT Footprint", ["Less than 50", "2 or less", "6 to 25"], sleepFunc, takeScreenshotFunc);
+
+  // Check total selected radio buttons after choosing options in Step 5
+  await sleepFunc();
+  const checkedCountStep5 = await page.evaluate(() => {
+    const radios = Array.from(document.querySelectorAll('input[type="radio"]:checked'));
+    return radios.length;
+  });
+  if (checkedCountStep5 === 3) {
+    console.log('PASS: Only 3 options are selectable on this page');
+  } else {
+    console.log(`FAIL: Expected 3 selected radio buttons after choosing options in Step 5, but found ${checkedCountStep5}`);
+    await browser.close();
+    process.exit(1);
+  }
+
+  if (debugEnabled) console.log('[DEBUG] Completed Step 5: IT Footprint');
+
   // Step 6: Familiarity With Compliance
+  if (debugEnabled) console.log('[DEBUG] Starting Step 6: Familiarity With Compliance');
   await sleepFunc();
   await chooseOptions(page, browser, "Please select the closest that apply to your customer", "Step 6: Familiarity With Compliance", ["My customer has been certified in past to an IT standard like SOC 2 or ISO 27001"], sleepFunc, takeScreenshotFunc);
   await clickNext(page, browser, "Step 6: Familiarity With Compliance", sleepFunc, takeScreenshotFunc);
+  if (debugEnabled) console.log('[DEBUG] Completed Step 6: Familiarity With Compliance');
 
   // Step 7: IT Controls (click next twice)
   await sleepFunc();

@@ -1,7 +1,7 @@
-const puppeteer = require('puppeteer');
-const fs = require('fs');
-const { sleepTime } = require('./config.js');
-const { sleep, takeScreenshot, chooseOptions, clickNext } = require('./common');
+import puppeteer from 'puppeteer';
+import fs from 'fs';
+import { sleepTime } from './config.js';
+import { sleep, takeScreenshot, chooseOptions, clickNext } from './common.js';
 
 async function runTest(test_url) {
   if (!test_url) {

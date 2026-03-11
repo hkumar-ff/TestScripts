@@ -49,6 +49,7 @@
         <div>
             <label for="targetUrl">Target URL:</label>
             <input type="text" id="targetUrl" value="https://dev.controlcase.com">
+            <button id="saveTargetUrlBtn" onclick="saveTargetUrl()">Save</button>
         </div>
         <div class="form">
             <input type="text" id="caseName" placeholder="Script Name (e.g., test.js)">
@@ -94,9 +95,19 @@
         function createSuite() {
             const name = $('#suiteName').val();
             if (!name) return;
-            $.post('/suites', JSON.stringify({name}), function() {
-                loadSuites();
-                $('#suiteName').val('');
+            $.ajax({
+                method: 'POST',
+                url: '/suites',
+                contentType: 'application/json',
+                data: JSON.stringify({name}),
+                success: function() {
+                    loadSuites();
+                    $('#suiteName').val('');
+                },
+                error: function(xhr) {
+                    const response = xhr.responseJSON || {};
+                    alert(response.error || 'Failed to create suite');
+                }
             });
         }
 
@@ -106,6 +117,10 @@
             $('#suites').hide();
             $('#suiteView').show();
             $.get(`/suites/${id}`, function(suite) {
+                // Set the target URL from the suite data
+                const targetUrl = suite.targetUrl || 'https://dev.controlcase.com';
+                $('#targetUrl').val(targetUrl);
+                
                 $('#testCases').empty();
                 suite.testCases.forEach(tc => {
                 const inputDataJson = JSON.stringify(tc.inputData || {}, null, 2);
@@ -339,6 +354,28 @@
             $('#screenshotViewerModal').hide();
             currentScreenshots = [];
             currentScreenshotIndex = 0;
+        }
+
+        function saveTargetUrl() {
+            const targetUrl = $('#targetUrl').val().trim();
+            if (!targetUrl) {
+                alert('Please enter a valid Target URL');
+                return;
+            }
+
+            $.ajax({
+                method: 'PUT',
+                url: `/suites/${currentSuiteId}/target-url`,
+                contentType: 'application/json',
+                data: JSON.stringify({targetUrl}),
+                success: function() {
+                    alert('Target URL saved successfully');
+                },
+                error: function(xhr) {
+                    const response = xhr.responseJSON || {};
+                    alert(response.error || 'Failed to save Target URL');
+                }
+            });
         }
 
         // Keyboard navigation for viewer
